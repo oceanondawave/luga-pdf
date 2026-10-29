@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Luga PDF | Convert to Word (.docx)</title>
+  <meta name="description" content="Convert Baidu PaddleOCR JSON and Markdown to Microsoft Word (.docx) with native OMML equations, tables, and photos.">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body class="h-full flex flex-col text-slate-800 antialiased font-sans">
+
+  <!-- Screen Reader Live Announcements -->
+  <div id="sr-status-announcer" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+  <div id="sr-alert-announcer" class="sr-only" role="alert" aria-live="assertive" aria-atomic="true"></div>
+
+  <!-- Header -->
+  <header class="border-b border-slate-200 bg-white/90 backdrop-blur sticky top-0 z-20">
+    <div class="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm shadow-blue-500/20" aria-hidden="true">
+          <i data-lucide="file-text" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h1 class="text-base font-bold text-slate-900 leading-tight">Luga PDF</h1>
+          <p class="text-xs text-slate-500">Document to Word Compiler</p>
+        </div>
+      </div>
+      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500" aria-hidden="true"></span>
+        OMML Math &bull; Tables &bull; Photos
+      </span>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-2xl w-full mx-auto px-4 py-12 flex flex-col justify-center">
+
+    <div class="text-center mb-8">
+      <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+        Convert to Word (.docx)
+      </h2>
+      <p class="mt-2 text-sm text-slate-600">
+        Upload your <code class="font-mono text-xs bg-slate-200 px-1 py-0.5 rounded">.json</code> or <code class="font-mono text-xs bg-slate-200 px-1 py-0.5 rounded">.md</code> file from PaddleOCR.
+      </p>
+    </div>
+
+    <!-- Main Card Container -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8" id="converter-card">
+
+      <!-- ========================================== -->
+      <!-- STATE 1: UPLOAD FORM                       -->
+      <!-- ========================================== -->
+      <form id="conversion-form" class="space-y-6" novalidate>
+        
+        <!-- Accessible Drag & Drop Area -->
+        <div
+          id="dropzone"
+          role="button"
+          tabindex="0"
+          aria-label="Upload file. Click or drag and drop a JSON or Markdown file here."
+          class="interactive-cursor group relative border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-xl p-8 sm:p-10 text-center transition-all bg-slate-50/50 hover:bg-blue-50/30 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none"
+        >
+          <input
+            type="file"
+            id="file-input"
+            name="file"
+            accept=".json,.md,.markdown,application/json,text/markdown,text/plain"
+            class="sr-only"
+          />
+          
+          <!-- Dropzone Empty State -->
+          <div id="dropzone-empty" class="flex flex-col items-center">
+            <div class="w-14 h-14 mb-3 rounded-full bg-blue-100/70 text-blue-600 flex items-center justify-center group-hover:scale-105 transition-transform" aria-hidden="true">
+              <i data-lucide="upload-cloud" class="w-7 h-7"></i>
+            </div>
+            <p class="text-base font-semibold text-slate-800">
+              <span class="text-blue-600 underline underline-offset-2">Click to select file</span> or drag & drop
+            </p>
+            <p class="text-xs text-slate-500 mt-1">
+              Supports <strong>.json</strong> or <strong>.md</strong> from PaddleOCR
+            </p>
+          </div>
+
+          <!-- Dropzone Selected State -->
+          <div id="dropzone-selected" class="hidden flex-col items-center">
+            <div class="w-12 h-12 mb-2 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center" aria-hidden="true">
+              <i data-lucide="file-check" class="w-6 h-6"></i>
+            </div>
+            <p id="selected-filename" class="text-sm font-bold text-slate-900 break-all"></p>
+            <p id="selected-filesize" class="text-xs text-slate-500 mt-0.5"></p>
+            <button
+              type="button"
+              id="btn-remove-file"
+              class="interactive-cursor mt-3 text-xs text-rose-600 hover:text-rose-700 font-medium underline inline-flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-rose-500"
+              aria-label="Remove selected file"
+            >
+              <i data-lucide="x" class="w-3.5 h-3.5" aria-hidden="true"></i>
+              Remove and choose another
+            </button>
+          </div>
+        </div>
+
+        <!-- Action Button -->
+        <div>
+          <button
+            type="submit"
+            id="btn-convert"
+            disabled
+            class="interactive-cursor w-full py-3.5 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base flex items-center justify-center gap-2 shadow-sm shadow-blue-500/20 transition-all focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:bg-slate-300 disabled:shadow-none"
+            aria-disabled="true"
+          >
+            <i data-lucide="sparkles" class="w-5 h-5" aria-hidden="true"></i>
+            <span id="btn-convert-text">Convert to Word (.docx)</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- ========================================== -->
+      <!-- STATE 2: PROCESSING STATE                  -->
+      <!-- ========================================== -->
+      <section id="processing-state" class="hidden py-8 space-y-6 text-center" aria-labelledby="processing-heading" aria-busy="true">
+        <div class="inline-flex p-3 rounded-full bg-blue-50 text-blue-600" aria-hidden="true">
+          <i data-lucide="loader-2" class="w-8 h-8 animate-spin"></i>
+        </div>
+        <div>
+          <h3 id="processing-heading" class="text-lg font-bold text-slate-900">
+            Converting Document...
+          </h3>
+          <p id="progress-status-text" class="text-sm text-slate-600 font-medium mt-1">
+            Downloading photos, compiling tables & math formulas...
+          </p>
+        </div>
+
+        <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden p-0.5 border border-slate-200 max-w-md mx-auto">
+          <div
+            id="progress-fill"
+            class="bg-blue-600 h-full rounded-full transition-all duration-300 ease-out"
+            style="width: 50%;"
+          ></div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- STATE 3: COMPLETED STATE                   -->
+      <!-- ========================================== -->
+      <section id="completed-state" class="hidden py-6 space-y-6 text-center" aria-labelledby="completed-heading">
+        <div class="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto" aria-hidden="true">
+          <i data-lucide="check-circle-2" class="w-10 h-10"></i>
+        </div>
+        
+        <div>
+          <h3 id="completed-heading" class="text-xl font-bold text-slate-900">
+            Word Document Ready!
+          </h3>
+          <p class="text-sm text-slate-600 mt-1">
+            Compiled with native editable OMML math equations, real tables & photos.
+          </p>
+          <div class="inline-flex items-center gap-2 mt-2 px-3 py-1 rounded-md bg-slate-100 text-xs text-slate-600">
+            <i data-lucide="file" class="w-3.5 h-3.5" aria-hidden="true"></i>
+            <span id="completed-filename" class="font-medium">document.docx</span>
+            <span class="text-slate-400">&bull;</span>
+            <span id="completed-filesize">0 MB</span>
+          </div>
+        </div>
+
+        <div class="max-w-md mx-auto space-y-3">
+          <a
+            id="btn-download"
+            href="#"
+            download
+            class="interactive-cursor w-full py-3.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-base flex items-center justify-center gap-2 shadow-sm shadow-emerald-500/20 transition-all focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
+          >
+            <i data-lucide="download" class="w-4 h-4"></i>
+            <span>Download Word Document</span>
+          </a>
+
+          <button
+            type="button"
+            id="btn-convert-another"
+            class="interactive-cursor w-full py-2.5 px-4 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 font-medium text-sm flex items-center justify-center gap-2 transition-all focus-visible:ring-2 focus-visible:ring-slate-400"
+          >
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            <span>Convert Another File</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- STATE 4: ERROR STATE                       -->
+      <!-- ========================================== -->
+      <section id="error-state" class="hidden py-6 space-y-4 text-center" aria-labelledby="error-heading">
+        <div class="w-14 h-14 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto" aria-hidden="true">
+          <i data-lucide="alert-triangle" class="w-7 h-7"></i>
+        </div>
+        
+        <div>
+          <h3 id="error-heading" class="text-lg font-bold text-slate-900">
+            Conversion Error
+          </h3>
+          <p id="error-message-text" class="text-sm text-rose-600 mt-2 max-w-md mx-auto bg-rose-50 p-3 rounded-lg border border-rose-200">
+            An unexpected error occurred.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          id="btn-try-again"
+          class="interactive-cursor inline-flex items-center gap-2 py-2.5 px-5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-medium text-sm shadow transition-all"
+        >
+          <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+          <span>Try Again</span>
+        </button>
+      </section>
+
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-200 bg-white py-4 mt-auto">
+    <div class="max-w-2xl mx-auto px-4 flex items-center justify-between text-xs text-slate-500">
+      <p>Luga PDF &bull; Pure Node.js &amp; Pandoc</p>
+      <p>100% Free &bull; Zero Python</p>
+    </div>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>

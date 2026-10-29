@@ -1,0 +1,60 @@
+/* Custom Styles, Focus Outlines, and Cursor Accessibility */
+
+/* Ensure all interactive elements have pointer cursor */
+button,
+a,
+input[type="checkbox"],
+input[type="radio"],
+input[type="file"],
+label[for],
+[role="button"],
+.interactive-cursor {
+  cursor: pointer;
+}
+
+/* Explicit cursor for disabled elements */
+button:disabled,
+input:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed !important;
+  opacity: 0.6;
+}
+
+/* Focus Visible accessibility rings for keyboard navigation */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+label:focus-visible,
+[role="button"]:focus-visible,
+[tabindex="0"]:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Screen reader only utility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Smooth transitions for states */
+.transition-smooth {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Pulsing accent for active progress step */
+@keyframes stepPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.05); }
+}
+
+.step-active-dot {
+  animation: stepPulse 1.5s infinite ease-in-out;
+}

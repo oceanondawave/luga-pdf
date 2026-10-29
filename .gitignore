@@ -1,0 +1,7 @@
+node_modules/
+storage/uploads/*
+storage/outputs/*
+!storage/uploads/.gitkeep
+!storage/outputs/.gitkeep
+.DS_Store
+*.log
