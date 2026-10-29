@@ -1,6 +1,16 @@
+---
+title: Luga PDF
+emoji: 📑
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Luga PDF - Node.js Web App
 
-A blazing-fast, 100% Python-free web application designed to convert **Baidu PaddleOCR-VL**, **MinerU**, or **ChatGPT/Claude** Markdown/JSON files into native, editable Microsoft Word (`.docx`) documents with **native OMML math equations**, real tables, and canonical Vietnamese diacritics.
+A blazing-fast, 100% Python-free web application designed to convert **Baidu PaddleOCR-VL**, **MinerU**, or **ChatGPT/Claude** Markdown/JSON files into native, editable Microsoft Word (`.docx`) documents with **native OMML math equations**, real tables, embedded photos, and canonical Vietnamese diacritics.
 
 ---
 
@@ -9,6 +19,7 @@ A blazing-fast, 100% Python-free web application designed to convert **Baidu Pad
 - **100% Python-Free**: Built entirely with Node.js and Express. No Python runtime, no PyTorch, no local GBs of AI model weights.
 - **Ultra-Fast (< 0.5s)**: Markdown & JSON compile almost instantaneously to Microsoft Word.
 - **Native OMML Math**: Formulas are converted directly into Microsoft Word's native equation format (`m:oMath`), fully editable inside Word.
+- **Tables & Embedded Photos**: Automatically downloads and embeds diagrams, charts, and photos from Baidu PaddleOCR JSON outputs.
 - **Perfect Vietnamese OCR**: Preserves all Vietnamese diacritics with automatic Unicode NFC canonical normalization.
 - **Accessible UI**: High-contrast, keyboard-navigable interface with screen-reader live regions (`aria-live="polite"`).
 
@@ -38,16 +49,6 @@ Open your browser and navigate to:
 ```
 http://localhost:7860
 ```
-
----
-
-## Recommended Workflow
-
-1. Go to **[Baidu AI Studio PaddleOCR](https://aistudio.baidu.com/paddleocr)**.
-2. Upload your PDF with complex formulas, graphs, and tables. Baidu runs its server-grade vision-language models for free.
-3. Export / download the **Markdown (.md)** or **JSON** file.
-4. Drag and drop the `.md` or `.json` file into **Luga PDF** at `http://localhost:7860`.
-5. Click **Compile to Word (.docx)**. Within half a second, download your editable Word document with real equations and tables!
 
 ---
 
