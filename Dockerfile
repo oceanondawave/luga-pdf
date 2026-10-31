@@ -3,6 +3,7 @@ FROM node:20-slim
 
 ENV NODE_ENV=production
 ENV DEBIAN_FRONTEND=noninteractive
+ENV NODE_OPTIONS="--max-old-space-size=160 --expose-gc"
 
 WORKDIR /app
 

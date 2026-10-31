@@ -184,7 +184,7 @@ function prepareMarkdown(text) {
   return md.normalize('NFC');
 }
 
-// Compile Markdown to DOCX with native OMML equations
+// Compile Markdown to DOCX with native OMML equations & low-memory RTS settings
 function compileToDocx(markdownText, outputPath, workDir) {
   return new Promise((resolve, reject) => {
     if (!pandocBinary) {
@@ -194,7 +194,14 @@ function compileToDocx(markdownText, outputPath, workDir) {
     const tempMdPath = path.join(workDir, `document_${crypto.randomUUID()}.md`);
     fs.writeFileSync(tempMdPath, markdownText, 'utf8');
 
+    // Run GC before starting Pandoc
+    if (global.gc) {
+      try { global.gc(); } catch {}
+    }
+
+    // Pandoc with RTS flags to restrict heap allocation and prevent OOM on 512MB containers
     const args = [
+      '+RTS', '-M180M', '-c', '-A1M', '-RTS',
       '-f', 'markdown+tex_math_dollars+tex_math_single_backslash+pipe_tables+grid_tables',
       '-t', 'docx',
       '-o', outputPath,
@@ -325,6 +332,12 @@ app.post('/api/convert', upload.single('file'), async (req, res) => {
     // Clean formulas, convert tables, normalize typography
     const cleanedMd = prepareMarkdown(extractedText);
 
+    // Free memory before running Pandoc
+    extractedText = null;
+    if (global.gc) {
+      try { global.gc(); } catch {}
+    }
+
     // Compile to Word with native OMML equations and embedded images
     await compileToDocx(cleanedMd, outputPath, taskDir);
 
@@ -400,8 +413,8 @@ app.use((err, req, res, next) => {
   return res.status(500).json({ detail: err.message || 'An internal error occurred during conversion.' });
 });
 
-const server = app.listen(PORT, () => {
-  console.log(`[Luga PDF] Web Server running at http://localhost:${PORT}`);
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`[Luga PDF] Web Server running on 0.0.0.0:${PORT}`);
   console.log(`[Luga PDF] High-Speed Pooled Compiler Active`);
 });
 
