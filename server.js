@@ -199,9 +199,9 @@ function compileToDocx(markdownText, outputPath, workDir) {
       try { global.gc(); } catch {}
     }
 
-    // Pandoc with RTS flags to restrict heap allocation and prevent OOM on 512MB containers
+    // Pandoc with RTS compacting garbage collection to keep memory lean
     const args = [
-      '+RTS', '-M180M', '-c', '-A1M', '-RTS',
+      '+RTS', '-c', '-A1M', '-RTS',
       '-f', 'markdown+tex_math_dollars+tex_math_single_backslash+pipe_tables+grid_tables',
       '-t', 'docx',
       '-o', outputPath,
