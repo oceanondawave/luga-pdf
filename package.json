@@ -4,8 +4,8 @@
   "description": "Fast, 100% Python-free web application to convert Markdown/JSON (from Baidu PaddleOCR-VL or MinerU) and PDFs into native, editable Microsoft Word (.docx) documents with native OMML equations and tables.",
   "main": "server.js",
   "scripts": {
-    "start": "node --expose-gc --max-old-space-size=160 server.js",
-    "dev": "node --watch --expose-gc --max-old-space-size=160 server.js"
+    "start": "node server.js",
+    "dev": "node --watch server.js"
   },
   "dependencies": {
     "express": "^4.21.2",
