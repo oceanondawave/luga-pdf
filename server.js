@@ -114,7 +114,10 @@ function convertHtmlTablesToMarkdown(text) {
 
   return text.replace(/<table[\s\S]*?<\/table>/gi, (tableHtml) => {
     try {
-      const mdTable = execSync(`"${pandocBinary}" -f html -t markdown`, { input: tableHtml }).toString();
+      const mdTable = execSync(`"${pandocBinary}" -f html -t markdown`, {
+        input: tableHtml,
+        maxBuffer: 10 * 1024 * 1024,
+      }).toString();
       return `\n\n${mdTable.trim()}\n\n`;
     } catch {
       return tableHtml;
@@ -122,28 +125,46 @@ function convertHtmlTablesToMarkdown(text) {
   });
 }
 
-// Download remote image URLs to local task working directory
-async function downloadImages(imageMap, imgsDir) {
+// High-speed pooled download for remote image URLs with per-image and overall timeouts
+async function downloadImages(imageMap, imgsDir, poolSize = 20, maxTotalMs = 15000) {
   if (!imageMap || Object.keys(imageMap).length === 0) return;
   fs.mkdirSync(imgsDir, { recursive: true });
 
-  await Promise.allSettled(
-    Object.entries(imageMap).map(async ([relPath, url]) => {
+  const entries = Object.entries(imageMap);
+  let index = 0;
+  let finished = false;
+
+  const timeoutPromise = new Promise((resolve) =>
+    setTimeout(() => {
+      finished = true;
+      resolve();
+    }, maxTotalMs)
+  );
+
+  async function worker() {
+    while (index < entries.length && !finished) {
+      const [relPath, url] = entries[index++];
       try {
         const filename = path.basename(relPath);
         const dest = path.join(imgsDir, filename);
-        if (fs.existsSync(dest)) return;
+        if (fs.existsSync(dest)) continue;
 
-        const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-        if (!res.ok) return;
-
-        const buf = await res.arrayBuffer();
-        fs.writeFileSync(dest, Buffer.from(buf));
+        const res = await fetch(url, {
+          headers: { 'User-Agent': 'Mozilla/5.0' },
+          signal: AbortSignal.timeout(5000),
+        });
+        if (res.ok) {
+          const buf = await res.arrayBuffer();
+          fs.writeFileSync(dest, Buffer.from(buf));
+        }
       } catch {
-        // Continue even if an individual image fails to download
+        // Continue cleanly on individual image timeouts
       }
-    })
-  );
+    }
+  }
+
+  const workers = Array.from({ length: Math.min(poolSize, entries.length) }, () => worker());
+  await Promise.race([Promise.all(workers), timeoutPromise]);
 }
 
 // Process markdown typography, formulas, tables, and images
@@ -254,8 +275,12 @@ app.post('/api/convert', upload.single('file'), async (req, res) => {
   const imgsDir = path.join(taskDir, 'imgs');
   fs.mkdirSync(taskDir, { recursive: true });
 
-  const originalExt = path.extname(req.file.originalname).toLowerCase();
-  const baseName = path.basename(req.file.originalname, originalExt);
+  let cleanOriginalName = req.file.originalname;
+  try {
+    cleanOriginalName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
+  } catch {}
+  const originalExt = path.extname(cleanOriginalName).toLowerCase();
+  const baseName = path.basename(cleanOriginalName, originalExt);
   const outputFilename = `${baseName}.docx`;
   const outputPath = path.join(OUTPUTS_DIR, `${taskId}_${outputFilename}`);
 
@@ -366,7 +391,21 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`[Luga PDF] Web Server running at http://localhost:${PORT}`);
-  console.log(`[Luga PDF] Formulas, Tables & Photos Compiler Active`);
+// Global Error Handler (Guarantees JSON error format for Multer & Express)
+app.use((err, req, res, next) => {
+  console.error('[Luga PDF Error]', err);
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({ detail: `Upload limit exceeded: ${err.message}` });
+  }
+  return res.status(500).json({ detail: err.message || 'An internal error occurred during conversion.' });
 });
+
+const server = app.listen(PORT, () => {
+  console.log(`[Luga PDF] Web Server running at http://localhost:${PORT}`);
+  console.log(`[Luga PDF] High-Speed Pooled Compiler Active`);
+});
+
+// Configure server timeouts for very large documents
+server.timeout = 180000;
+server.keepAliveTimeout = 65000;
+server.headersTimeout = 66000;

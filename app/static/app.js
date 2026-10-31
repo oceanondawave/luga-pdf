@@ -174,6 +174,15 @@ document.addEventListener("DOMContentLoaded", () => {
     processingState.classList.remove("hidden");
     processingState.setAttribute("aria-busy", "true");
 
+    const progressStatusEl = document.getElementById("progress-status-text");
+    if (progressStatusEl) {
+      if (selectedFile && selectedFile.size > 2 * 1024 * 1024) {
+        progressStatusEl.textContent = "Processing large document (downloading photos, compiling tables & math formulas)...";
+      } else {
+        progressStatusEl.textContent = "Compiling tables, math formulas & photos...";
+      }
+    }
+
     if (window.lucide) window.lucide.createIcons();
     announceStatus("Converting document. All inputs locked.");
   }
@@ -219,8 +228,17 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || "Conversion failed");
+        let errorMsg = `Server returned status ${res.status}`;
+        try {
+          const err = await res.json();
+          if (err && err.detail) errorMsg = err.detail;
+        } catch {
+          try {
+            const txt = await res.text();
+            if (txt) errorMsg = txt.slice(0, 150);
+          } catch {}
+        }
+        throw new Error(errorMsg);
       }
 
       const data = await res.json();
